@@ -1,0 +1,64 @@
+/* CSS переменные для тем и цветов */
+:root {
+  /* Основные цвета */
+  --color-primary: #27B327;
+  --color-primary-dark: #1e7c29;
+  --color-primary-light: #57c785;
+  --color-accent: #4a90e2;
+  --color-danger: #ff4444;
+  --color-warning: #ff9800;
+  --color-success: #4caf50;
+  
+  /* Текст */
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-light: #999999;
+  --text-inverse: #ffffff;
+  
+  /* Фоны */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e9ecef;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Границы */
+  --border-color: #dddddd;
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  
+  /* Тени */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 15px rgba(0, 0, 0, 0.2);
+  
+  /* Отступы */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Шрифты */
+  --font-family: 'Helvetica', 'Arial', sans-serif;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+  
+  /* Анимации */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Темная тема */
+[data-theme="dark"] {
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-light: #999999;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --border-color: #444444;
+}
