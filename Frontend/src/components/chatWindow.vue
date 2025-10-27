@@ -211,7 +211,6 @@ export default {
                     
                     this.messages.push(botMessage);
                 } else {
-                    // ФИКС: Используем addSystemMessage вместо создания сообщения об ошибке напрямую
                     this.addSystemMessage('Не удалось получить ответ от нейросети');
                 }
                 

@@ -209,3 +209,12 @@ class GigaChatManager:
             }))
         return result
     
+'''
+giga = GigaChatManager("MDE5OWM5OGUtMDI3MC03ZGM4LWIyMjItODMyMjE3YjllZjFlOjEzMmUzZTg5LTU2ZTgtNDA2NS1hZmFhLTcwM2FmZTRjMzA2Ng==")
+
+print(giga.get_files_filenames())
+giga.delete_all_files()
+giga.upload_file("44FZ.pdf")
+giga.upload_file("223FZ.pdf")
+print(giga.get_files_filenames())
+'''
