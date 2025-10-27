@@ -1,75 +1,42 @@
 # ИИ-помощник на основе GigaChat
 
-![Project Preview](image.png)
+![alt text](image-1.png)
 
-Сервис ИИ-помощник на основе Gigachat, который позволяет взаимодействовать со справочным материалом по машиностроительному оборудованию, задавать вопросы по материалу и получать качественные ответы.
+Сервис ИИ-помощник на основе GigaChat, который позволяет анализировать документы, задавать вопросы по их содержимому и получать качественные ответы.
 
 ## Основные возможности
 
-- **Интеллектуальная обработка документов** - загрузка и анализ PDF-файлов
+- **Интеллектуальная обработка документов** - загрузка и анализ PDF, Word и TXT файлов
 - **Контекстные ответы** - получение точных ответов на основе загруженных материалов
 - **Простое взаимодействие** - удобный интерфейс для общения с ИИ-помощником
-- **Поддержка различных форматов** - работа с PDF
+- **Голосовой ввод** - возможность задавать вопросы голосом
+- **Поддержка различных форматов** - работа с PDF, DOC/DOCX, TXT
 
 ## Технологический стек
 
 ### Backend
-- **Python** с Flask framework-ом
+- **Python** с FastAPI framework
 - **GigaChat API** - интеграция с нейросетью от Сбера
-- **Supabase** - облачная база данных
-- **PyPDF2** - обработка PDF-файлов
+- **pdfplumber** - обработка PDF-файлов
+- **python-docx** - обработка Word документов
 
 ### Frontend
-- **Vue** с современным UI
-- **Flask** - кросс-доменные запросы
+- **Vue.js** - современный фреймворк
+- **Адаптивный UI** - красивый и удобный интерфейс
 
 ## Установка и настройка
 
 ### Предварительные требования
-- Python 3.13+
-- Node.js
-- Аккаунт Supabase
-- Токен GigaChat
+- Python 3.8+
+- Node.js 14+
+- Токен GigaChat API
 
 ### Установка зависимостей:
 
 ```bash
 # Backend зависимости
-pip install supabase, requests, PyPDF2, gigachat, pdf2docx, flask, flask_cors
+pip install fastapi uvicorn pdfplumber python-docx gigachat
 
 # Frontend зависимости
-cd Sber/Frontend
+cd frontend
 npm install
-```
-### Таблица для БД:
-
-```sql
-CREATE TABLE pdf_files (
-    id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    storage_path TEXT NOT NULL,
-    file_url TEXT,
-    file_size BIGINT,
-    uploaded_at TIMESTAMPTZ DEFAULT NOW(),
-    gigachat_file_id TEXT,
-    txt_path TEXT,
-    processed_path TEXT
-);
-
-ALTER TABLE pdf_files DISABLE ROW LEVEL SECURITY;
-```
-### Запуск сервера:
-
-```bash
-cd Sber/Backend/server
-py server.py
-```
-### Запуск клиента:
-
-```bash
-cd Sber/Frontend
-npm run dev
-```
-Перед запуском убедитесь, что:
-Указаны корректные учетные данные Supabase
-Установлен действительный токен GigaChat

@@ -36,16 +36,17 @@
           alt="Информация" 
           class="info-icon"
       />
-      <h3> 
+      <p> 
         Для обращения к aссистенту, необходимо прикрепить файл с помощью кнопки 
         <img 
             :src="paperClipIcon" 
             alt="Добавление файла" 
             class="paperClip-icon"
         />
-        . 
+        . <br> 
         Доступные форматы файлов: txt, word, PDF.
-      </h3>
+        
+      </p>
 
  
     </div>
@@ -335,10 +336,14 @@ export default {
 .block-info {
   width: 350px;
   padding: 20px;
-  background-color: #bbb7b7;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   border-radius: 20px;
-  border: 2px solid #777575;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #5a67d8;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  margin: 0px 30px 0px 0px;
+  font-family: 'Inter', sans-serif;
   margin: 0px 0px 0px 30px;
 }
 

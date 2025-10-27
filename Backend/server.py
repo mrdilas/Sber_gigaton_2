@@ -84,14 +84,14 @@ class FileProcessor:
             
             if file_extension == 'pdf':
                 text = await FileProcessor.extract_text_from_pdf(temp_path)
-            elif file_extension == 'docx':
+            elif file_extension in ['docx', 'doc']:
                 text = await FileProcessor.extract_text_from_docx(temp_path)
             elif file_extension == 'txt':
                 text = await FileProcessor.extract_text_from_txt(temp_path)
             else:
                 raise HTTPException(
                     status_code=400, 
-                    detail="Неподдерживаемый формат файла. Поддерживаются: PDF, DOCX, TXT"
+                    detail="Неподдерживаемый формат файла. Поддерживаются: PDF, DOCX, DOC, TXT"
                 )
             
             if not text.strip():
@@ -106,7 +106,7 @@ class FileProcessor:
 @app.post("/api/chat")
 async def chat_with_message(
     message: str = Form(..., description="Текст сообщения пользователя"),
-    file: Optional[UploadFile] = File(None, description="Опциональный файл (PDF, DOCX, TXT)"),
+    file: Optional[UploadFile] = File(None, description="Опциональный файл (PDF, DOCX, DOC, TXT)"),
     file_id: Optional[str] = Form(None, description="ID файла в GigaChat")
 ):
     """
@@ -118,10 +118,20 @@ async def chat_with_message(
         
         # Если передан файл, обрабатываем его
         if file:
+            # Проверяем тип файла
+            file_extension = file.filename.lower().split('.')[-1] if file.filename else ''
+            allowed_extensions = ['pdf', 'docx', 'doc', 'txt']
+            
+            if file_extension not in allowed_extensions:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Неподдерживаемый формат файла. Поддерживаются: {', '.join(allowed_extensions).upper()}"
+                )
+            
             file_text = await FileProcessor.process_uploaded_file(file)
             if file_text:
                 if final_message:
-                    final_message = f"{final_message}\n\nКонтекст из файла:\n{file_text}"
+                    final_message = f"{final_message}\n\nКонтекст из файла '{file.filename}':\n{file_text}"
                 else:
                     final_message = file_text
         
@@ -170,20 +180,27 @@ async def chat_with_message(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки запроса: {str(e)}")
 
-@app.post("/api/pdf/upload")
-async def upload_pdf_file(
-    file: UploadFile = File(..., description="PDF файл для загрузки")
+# Обновляем endpoint для загрузки файлов - переименовываем для поддержки всех типов
+@app.post("/api/file/upload")
+async def upload_file(
+    file: UploadFile = File(..., description="Файл для загрузки (PDF, DOCX, DOC, TXT)")
 ):
     """
-    Загружает PDF файл в GigaChat и возвращает его ID
+    Загружает файл в GigaChat и возвращает его ID
     """
     try:
-        # Проверяем что файл PDF
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Поддерживаются только PDF файлы")
+        # Проверяем тип файла
+        file_extension = file.filename.lower().split('.')[-1] if file.filename else ''
+        allowed_extensions = ['pdf', 'docx', 'doc', 'txt']
+        
+        if file_extension not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Неподдерживаемый формат файла. Поддерживаются: {', '.join(allowed_extensions).upper()}"
+            )
         
         # Сохраняем файл временно
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{file_extension}') as temp_file:
             content = await file.read()
             temp_file.write(content)
             temp_path = temp_file.name
@@ -197,7 +214,8 @@ async def upload_pdf_file(
                 "file": {
                     "id": upload_response.id,
                     "filename": file.filename,
-                    "size": upload_response.size
+                    "size": upload_response.size,
+                    "type": file_extension.upper()
                 }
             })
             
@@ -208,27 +226,30 @@ async def upload_pdf_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка загрузки файла: {str(e)}")
 
-@app.get("/api/pdf/files")
-async def get_pdf_files():
+# Обновляем endpoint для получения списка файлов
+@app.get("/api/files")
+async def get_files():
     """
-    Возвращает список PDF файлов в GigaChat
+    Возвращает список всех файлов в GigaChat
     """
     try:
         files = file_manager.list_files_detailed()
         
-        # Фильтруем только PDF файлы (по расширению)
-        pdf_files = []
+        # Поддерживаемые типы файлов
+        supported_files = []
         for file_info in files:
-            if file_info['filename'].lower().endswith('.pdf'):
-                pdf_files.append({
+            file_extension = file_info['filename'].lower().split('.')[-1]
+            if file_extension in ['pdf', 'docx', 'doc', 'txt']:
+                supported_files.append({
                     "id": file_info['id'],
                     "name": file_info['filename'],
                     "size": file_info['size'],
+                    "type": file_extension.upper(),
                     "uploaded_at": file_info['created_at']
                 })
         
         return JSONResponse({
-            "files": pdf_files
+            "files": supported_files
         })
         
     except Exception as e:

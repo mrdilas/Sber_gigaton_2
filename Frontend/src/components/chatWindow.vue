@@ -33,6 +33,20 @@
 
         <!-- Поле ввода и кнопки отправки -->
         <div class="input-container">
+            <!-- Область прикрепленного файла -->
+            <div v-if="attachedFile" class="attached-file-preview">
+                <div class="file-preview-content">
+                    <img :src="getFileIcon(attachedFile.name)" alt="File" class="file-preview-icon" />
+                    <div class="file-info">
+                        <span class="file-name">{{ attachedFile.name }}</span>
+                        <span class="file-size">{{ formatFileSize(attachedFile.size) }}</span>
+                    </div>
+                    <button @click="removeAttachedFile" class="remove-file-button" title="Удалить файл">
+                        ×
+                    </button>
+                </div>
+            </div>
+
             <div class="input-wrapper">
                 <input 
                     v-model="newMessage" 
@@ -69,7 +83,7 @@
                     @click="addFileOnChat"
                     class="paperClip-button"
                     type="button"
-                    :disabled="loadingFile"
+                    :disabled="loadingFile || isLoading"
                     title="Добавление файла"
                 >
                     <img 
@@ -94,15 +108,15 @@
                 <input 
                     type="file" 
                     ref="fileInput"
-                    @change="handleFileUpload"
-                    accept=".pdf"
+                    @change="handleFileSelect"
+                    accept=".pdf,.docx,.txt,.doc"
                     style="display: none"
                 />
 
                 <!-- кнопка отправки сообщения -->
                 <button 
                     @click="sendMessage" 
-                    :disabled="!newMessage.trim() || isLoading"
+                    :disabled="!canSendMessage"
                     class="send-button"
                 >
                     <span v-if="!isLoading">Отправить</span>
@@ -121,6 +135,9 @@
 import microphoneIcon from '../assets/microphone.svg';
 import recordingIcon from '../assets/microphone.svg';
 import paperClipIcon from '../assets/paperclip.svg';
+import pdfIcon from '../assets/pdf.svg'; 
+import wordIcon from '../assets/word.svg';
+import txtIcon from '../assets/txt.svg';
 
 export default {
     name: 'ChatWindow',
@@ -149,16 +166,79 @@ export default {
             recordingTime: 0,
             recordingTimer: null,
             loadingFile: false,
+            
+            attachedFile: null,
             microphoneIcon: microphoneIcon,
             recordingIcon: recordingIcon,
             paperClipIcon: paperClipIcon,
+            pdfIcon: pdfIcon,
+            txtIcon: txtIcon,
+            wordIcon: wordIcon,
             apiUrl: 'http://localhost:5000/api/chat'
         }
     },
     
+    computed: {
+        // Кнопка отправки активна, когда есть текст ИЛИ прикреплен файл
+        canSendMessage() {
+            return (this.newMessage.trim() || this.attachedFile) && !this.isLoading;
+        }
+    },
+    
     methods: {
+        // Метод для получения иконки в зависимости от типа файла
+        getFileIcon(filename) {
+            if (!filename) return this.pdfIcon;
+            
+            const extension = filename.toLowerCase().split('.').pop();
+            
+            switch (extension) {
+                case 'pdf':
+                    return this.pdfIcon;
+                case 'docx':
+                case 'doc':
+                    return this.wordIcon;
+                case 'txt':
+                    return this.txtIcon;
+                default:
+                    return this.pdfIcon;
+            }
+        },
+
+        // Проверка типа файла
+        isValidFileType(file) {
+            const allowedTypes = [
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword',
+                'text/plain'
+            ];
+            
+            const allowedExtensions = ['.pdf', '.docx', '.doc', '.txt'];
+            const fileExtension = '.' + file.name.toLowerCase().split('.').pop();
+            
+            return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+        },
+
+        // Получение человекочитаемого типа файла
+        getFileTypeDescription(filename) {
+            const extension = filename.toLowerCase().split('.').pop();
+            
+            switch (extension) {
+                case 'pdf':
+                    return 'PDF документ';
+                case 'docx':
+                case 'doc':
+                    return 'Word документ';
+                case 'txt':
+                    return 'Текстовый файл';
+                default:
+                    return 'Документ';
+            }
+        },
+
         async sendMessage() {
-            if (!this.newMessage.trim() || this.isLoading) return;
+            if (!this.canSendMessage) return;
 
             const userMessageText = this.newMessage.trim();
             this.newMessage = '';
@@ -177,50 +257,94 @@ export default {
             });
 
             try {
-                const requestData = {
-                    message: userMessageText,
-                    file_id: this.selectedFileId
+                let requestData = {
+                    message: userMessageText
                 };
 
-                console.log('Отправляем запрос на сервер:', requestData);
+                // Если есть прикрепленный файл, отправляем его вместе с сообщением
+                if (this.attachedFile) {
+                    const formData = new FormData();
+                    formData.append('message', userMessageText);
+                    formData.append('file', this.attachedFile);
 
-                const response = await fetch(this.apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestData)
-                });
+                    console.log('Отправляем запрос с файлом на сервер:', {
+                        message: userMessageText,
+                        fileName: this.attachedFile.name,
+                        fileSize: this.attachedFile.size,
+                        fileType: this.getFileTypeDescription(this.attachedFile.name)
+                    });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
 
-                const data = await response.json();
-                
-                console.log('Получен ответ от сервера:', data);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
 
-                if (data.response) {
-                    const formattedResponse = this.formatResponse(data.response);
+                    const data = await response.json();
                     
-                    const botMessage = {
-                        text: formattedResponse,
-                        type: 'bot',
-                        timestamp: new Date()
-                    };
+                    console.log('Получен ответ от сервера:', data);
+
+                    if (data.response) {
+                        const formattedResponse = this.formatResponse(data.response);
+                        
+                        const botMessage = {
+                            text: formattedResponse,
+                            type: 'bot',
+                            timestamp: new Date()
+                        };
+                        
+                        this.messages.push(botMessage);
+                    } else {
+                        this.addSystemMessage('Не удалось получить ответ от нейросети');
+                    }
+
+                    // Убираем прикрепленный файл после отправки
+                    this.attachedFile = null;
                     
-                    this.messages.push(botMessage);
                 } else {
-                    this.addSystemMessage('Не удалось получить ответ от нейросети');
+                    // Отправка только текста (существующая логика)
+                    requestData.file_id = this.selectedFileId;
+
+                    console.log('Отправляем текстовый запрос на сервер:', requestData);
+
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    console.log('Получен ответ от сервера:', data);
+
+                    if (data.response) {
+                        const formattedResponse = this.formatResponse(data.response);
+                        
+                        const botMessage = {
+                            text: formattedResponse,
+                            type: 'bot',
+                            timestamp: new Date()
+                        };
+                        
+                        this.messages.push(botMessage);
+                    } else {
+                        this.addSystemMessage('Не удалось получить ответ от нейросети');
+                    }
                 }
                 
             } catch (error) {
                 console.error('Ошибка при отправке сообщения:', error);
                 
-                // ФИКС: Добавляем системное сообщение об ошибке
                 this.addSystemMessage(`Произошла ошибка: ${error.message}`);
-                
-                // Также показываем уведомление
                 this.showErrorNotification(`Ошибка: ${error.message}`);
             } finally {
                 this.isLoading = false;
@@ -232,7 +356,6 @@ export default {
         },
         
         showErrorNotification(message) {
-            // Если есть система уведомлений - используем её
             if (this.$notify) {
                 this.$notify({
                     title: 'Ошибка',
@@ -240,12 +363,10 @@ export default {
                     type: 'error'
                 });
             } else {
-                // Иначе показываем простой alert
                 alert(`Ошибка: ${message}`);
             }
         },
 
-        // ФИКС: Добавляем отсутствующий метод addSystemMessage
         addSystemMessage(text) {
             const systemMessage = {
                 text: this.formatResponse(text),
@@ -259,7 +380,6 @@ export default {
             });
         },
 
-        // Добавляем сообщение о выборе файла
         addFileSelectionMessage(fileId) {
             const selectionMessage = {
                 text: `📁 <strong>Выбран документ для поиска</strong><br>
@@ -291,6 +411,52 @@ export default {
             return formattedText;
         },
 
+        // Новый метод для выбора файла (без загрузки в БД)
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Проверяем тип файла
+            if (!this.isValidFileType(file)) {
+                alert('Пожалуйста, выберите файл в формате PDF, Word (DOC/DOCX) или TXT');
+                return;
+            }
+
+            const maxSize = 150 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('Файл слишком большой. Максимальный размер 150MB');
+                return;
+            }
+
+            // Просто прикрепляем файл к сообщению
+            this.attachedFile = file;
+            
+            // Очищаем input для возможности выбора того же файла снова
+            event.target.value = '';
+            
+            console.log('Файл прикреплен:', {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                description: this.getFileTypeDescription(file.name)
+            });
+        },
+
+        // Метод для удаления прикрепленного файла
+        removeAttachedFile() {
+            this.attachedFile = null;
+        },
+
+        // Форматирование размера файла
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+
+        // Остальные методы остаются без изменений
         toggleVoiceInput() {
             if (this.isRecording) {
                 this.stopVoiceRecognition();
@@ -354,16 +520,17 @@ export default {
         },
 
         addFileOnChat() {
-            if (this.loadingFile) return;
+            if (this.loadingFile || this.isLoading) return;
             this.$refs.fileInput.click();
         },
 
+        // Старый метод для загрузки в БД (оставляем на случай если понадобится)
         async handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file || this.loadingFile) return;
 
-            if (file.type !== 'application/pdf') {
-                alert('Пожалуйста, выберите PDF файл');
+            if (!this.isValidFileType(file)) {
+                alert('Пожалуйста, выберите файл в формате PDF, Word (DOC/DOCX) или TXT');
                 return;
             }
 
@@ -466,6 +633,79 @@ export default {
 </script>
 
 <style scoped>
+/* Добавляем стили для превью прикрепленного файла */
+.attached-file-preview {
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px dashed #667eea;
+    border-radius: 12px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.file-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-preview-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.file-size {
+    font-size: 12px;
+    color: #666;
+}
+
+.remove-file-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #ff6b6b;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.remove-file-button:hover {
+    background: #ff6b6b;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Остальные стили остаются без изменений */
 .chat-container {
     display: flex;
     flex-direction: column;
@@ -883,6 +1123,14 @@ export default {
     
     .input-container {
         padding: 20px 15px;
+    }
+    
+    .attached-file-preview {
+        padding: 10px 12px;
+    }
+    
+    .file-preview-content {
+        gap: 8px;
     }
 }
 </style>
