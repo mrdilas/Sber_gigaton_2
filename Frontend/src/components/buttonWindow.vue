@@ -1,6 +1,8 @@
 <template>
   <div class="button-window">
-
+    <div class="block-info">
+      информация о сайте
+    </div>
     
   </div>
 </template>
@@ -27,23 +29,13 @@ export default {
   gap: 20px;
 }
 
-.toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.toolbar-btn {
-  padding: 10px 15px;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.toolbar-btn:hover {
-  background: #e0e0e0;
-  transform: translateY(-2px);
+.block-info {
+  width: 350px;
+  padding: 20px;
+  background-color: #bbb7b7;
+  border-radius: 20px;
+  border: 2px solid #777575;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 0px 30px 0px 0px;
 }
 </style>

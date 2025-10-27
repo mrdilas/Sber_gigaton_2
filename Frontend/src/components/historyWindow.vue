@@ -1,7 +1,7 @@
 <!-- historyWindow.vue - исправленная версия -->
 <template>
   <div class="history-window">
-    <!-- Кнопка загрузки PDF -->
+    <!-- Кнопка загрузки PDF
     <button 
       class="button-pdf upload-btn"
       type="button"
@@ -16,25 +16,48 @@
       Выберете формат Word или PDF
     </div>
 
+    
 
-
-    <!-- Индикатор загрузки 
+     Индикатор загрузки 
     <div v-if="isLoading" class="loading-indicator">
       Загрузка...
     </div>
-    -->
+    
     <div class="file-upload-progress" v-if="uploadProgress > 0">
       <div class="progress-bar">
         <div class="progress-fill" :style="{width: uploadProgress + '%'}"></div>
       </div>
       <span>{{ uploadProgress }}%</span>
     </div>
+    -->
+    <div class="block-info">
+      <img 
+          :src="infoIcon" 
+          alt="Информация" 
+          class="info-icon"
+      />
+      <h3> 
+        Для обращения к aссистенту, необходимо прикрепить файл с помощью кнопки 
+        <img 
+            :src="paperClipIcon" 
+            alt="Добавление файла" 
+            class="paperClip-icon"
+        />
+        . 
+        Доступные форматы файлов: txt, word, PDF.
+      </h3>
+
+ 
+    </div>
+
   </div>
 </template>
 
 <script>
 import cloudIcon from '../assets/cloud.svg';
 import pdfIcon from '../assets/pdf.svg';
+import infoIcon from '../assets/info.svg';
+import paperClipIcon from '../assets/paperclip.svg';
 
 export default {
   name: 'HistoryWindow',
@@ -45,7 +68,9 @@ export default {
       pdfIcon: pdfIcon,
       activePdfId: null,
       pdfFiles: [],
-      isLoading: false
+      isLoading: false,
+      infoIcon: infoIcon,
+      paperClipIcon: paperClipIcon,
     }
   },
 
@@ -170,10 +195,12 @@ export default {
 <style scoped>
 .history-window {
   display: flex;
+  width: 100%;
   flex-direction: column;
+  justify-content: center;  /* горизонтальное центрирование */
   align-items: center;
   gap: 15px;
-  width: 100%;
+  
 }
 
 .pdf-list {
@@ -303,5 +330,31 @@ export default {
   font-style: italic;
   text-align: center;
   padding: 1px;
+}
+
+.block-info {
+  width: 350px;
+  padding: 20px;
+  background-color: #bbb7b7;
+  border-radius: 20px;
+  border: 2px solid #777575;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 0px 0px 0px 30px;
+}
+
+.info-icon {
+  width: 33px;
+  height: 33px;
+  object-fit: contain;
+  transition: all 0.3s ease;
+  filter: brightness(0) invert(1);
+}
+
+.paperClip-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    filter: brightness(0) invert(1);
 }
 </style>
