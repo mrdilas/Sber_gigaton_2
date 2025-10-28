@@ -191,7 +191,7 @@ export default {
             pdfIcon: pdfIcon,
             txtIcon: txtIcon,
             wordIcon: wordIcon,
-            apiUrl: 'http://localhost:5000/api/test' //http://localhost:5000/api/chat
+            apiUrl: 'http://localhost:5000/api/chat'
         }
     },
     
@@ -730,6 +730,12 @@ export default {
     text-align: center;
     backdrop-filter: blur(10px);
     border-radius: 0px 0px 20px 20px;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .chat-header h2 {
@@ -831,6 +837,12 @@ export default {
     color: rgba(15, 15, 15, 0.8);
     margin-top: 8px;
     font-weight: 500;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .message.bot .message-time,
@@ -891,6 +903,12 @@ export default {
     font-family: inherit;
     letter-spacing: -0.2px;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .send-button:hover:not(:disabled) {
@@ -918,6 +936,12 @@ export default {
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .voice-button:hover:not(:disabled) {
@@ -985,6 +1009,12 @@ export default {
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .paperClip-icon {

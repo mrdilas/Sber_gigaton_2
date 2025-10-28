@@ -44,7 +44,7 @@
             class="paperClip-icon"
         />
         . <br> 
-        Доступные форматы файлов: txt, word, PDF.
+        Доступные форматы файлов: TXT, WORD, PDF.
         
       </p>
 
