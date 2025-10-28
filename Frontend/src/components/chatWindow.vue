@@ -177,6 +177,7 @@ export default {
             });
 
             try {
+<<<<<<< Updated upstream
                 const requestData = {
                     message: userMessageText,
                     file_id: this.selectedFileId
@@ -212,16 +213,66 @@ export default {
                     this.messages.push(botMessage);
                 } else {
                     this.addSystemMessage('Не удалось получить ответ от нейросети');
+=======
+                const formData = new FormData();
+                formData.append('message', userMessageText);
+                
+                // Если есть прикрепленный файл, добавляем его
+                if (this.attachedFile) {
+                    formData.append('file', this.attachedFile);
+                    console.log('Отправляем запрос с файлом:', {
+                        message: userMessageText,
+                        fileName: this.attachedFile.name
+                    });
+                } else {
+                    console.log('Отправляем текстовый запрос:', {
+                        message: userMessageText
+                    });
+>>>>>>> Stashed changes
                 }
+
+                const response = await fetch(this.apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('Получен ответ от сервера:', data);
+
+                if (data.response) {
+                    const formattedResponse = this.formatResponse(data.response);
+                    
+                    const botMessage = {
+                        text: formattedResponse,
+                        type: 'bot',
+                        timestamp: new Date()
+                    };
+                    
+                    this.messages.push(botMessage);
+                } else {
+                    this.addSystemMessage('Не удалось получить ответ от нейросети');
+                }
+
+                // Убираем прикрепленный файл после отправки
+                this.attachedFile = null;
                 
             } catch (error) {
                 console.error('Ошибка при отправке сообщения:', error);
+<<<<<<< Updated upstream
                 
                 // ФИКС: Добавляем системное сообщение об ошибке
                 this.addSystemMessage(`Произошла ошибка: ${error.message}`);
                 
                 // Также показываем уведомление
                 this.showErrorNotification(`Ошибка: ${error.message}`);
+=======
+                this.addSystemMessage(`Произошла ошибка: ${error.message}`);
+>>>>>>> Stashed changes
             } finally {
                 this.isLoading = false;
                 
