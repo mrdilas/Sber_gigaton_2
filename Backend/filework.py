@@ -194,12 +194,14 @@ class GigaChatManager:
         
         # Форматируем промпт с сообщением пользователя
         prompt = prompt_template.format(message=message)
+        print(f"Запрос пользователя: \n{prompt}")
         result = []
+        print(self.get_files_ids())
         for file in self.get_files_ids():
             result.append(self.giga.chat({
                 "messages": [
                     {
-                        "role": "assistant",
+                        "role": "user",
                         "content": prompt,
                         "attachments": [file],
                     }
@@ -207,6 +209,7 @@ class GigaChatManager:
                 "temperature": 0.7,
                 "max_tokens": 600
             }))
+            print(result)
         return result
     
 '''

@@ -257,95 +257,55 @@ export default {
             });
 
             try {
-                let requestData = {
-                    message: userMessageText
-                };
-
-                // Если есть прикрепленный файл, отправляем его вместе с сообщением
+                const formData = new FormData();
+                formData.append('message', userMessageText);
+                
+                // Если есть прикрепленный файл, добавляем его
                 if (this.attachedFile) {
-                    const formData = new FormData();
-                    formData.append('message', userMessageText);
                     formData.append('file', this.attachedFile);
-
-                    console.log('Отправляем запрос с файлом на сервер:', {
+                    console.log('Отправляем запрос с файлом:', {
                         message: userMessageText,
-                        fileName: this.attachedFile.name,
-                        fileSize: this.attachedFile.size,
-                        fileType: this.getFileTypeDescription(this.attachedFile.name)
+                        fileName: this.attachedFile.name
                     });
-
-                    const response = await fetch(this.apiUrl, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    
-                    console.log('Получен ответ от сервера:', data);
-
-                    if (data.response) {
-                        const formattedResponse = this.formatResponse(data.response);
-                        
-                        const botMessage = {
-                            text: formattedResponse,
-                            type: 'bot',
-                            timestamp: new Date()
-                        };
-                        
-                        this.messages.push(botMessage);
-                    } else {
-                        this.addSystemMessage('Не удалось получить ответ от нейросети');
-                    }
-
-                    // Убираем прикрепленный файл после отправки
-                    this.attachedFile = null;
-                    
                 } else {
-                    // Отправка только текста (существующая логика)
-                    requestData.file_id = this.selectedFileId;
-
-                    console.log('Отправляем текстовый запрос на сервер:', requestData);
-
-                    const response = await fetch(this.apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(requestData)
+                    console.log('Отправляем текстовый запрос:', {
+                        message: userMessageText
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    
-                    console.log('Получен ответ от сервера:', data);
-
-                    if (data.response) {
-                        const formattedResponse = this.formatResponse(data.response);
-                        
-                        const botMessage = {
-                            text: formattedResponse,
-                            type: 'bot',
-                            timestamp: new Date()
-                        };
-                        
-                        this.messages.push(botMessage);
-                    } else {
-                        this.addSystemMessage('Не удалось получить ответ от нейросети');
-                    }
                 }
+
+                const response = await fetch(this.apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('Получен ответ от сервера:', data);
+
+                if (data.response) {
+                    const formattedResponse = this.formatResponse(data.response);
+                    
+                    const botMessage = {
+                        text: formattedResponse,
+                        type: 'bot',
+                        timestamp: new Date()
+                    };
+                    
+                    this.messages.push(botMessage);
+                } else {
+                    this.addSystemMessage('Не удалось получить ответ от нейросети');
+                }
+
+                // Убираем прикрепленный файл после отправки
+                this.attachedFile = null;
                 
             } catch (error) {
                 console.error('Ошибка при отправке сообщения:', error);
-                
                 this.addSystemMessage(`Произошла ошибка: ${error.message}`);
-                this.showErrorNotification(`Ошибка: ${error.message}`);
             } finally {
                 this.isLoading = false;
                 
