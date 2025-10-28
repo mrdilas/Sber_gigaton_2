@@ -194,12 +194,14 @@ class GigaChatManager:
         
         # Форматируем промпт с сообщением пользователя
         prompt = prompt_template.format(message=message)
+        print(f"Запрос пользователя: \n{prompt}")
         result = []
+        print(self.get_files_ids())
         for file in self.get_files_ids():
             result.append(self.giga.chat({
                 "messages": [
                     {
-                        "role": "assistant",
+                        "role": "user",
                         "content": prompt,
                         "attachments": [file],
                     }
@@ -207,14 +209,25 @@ class GigaChatManager:
                 "temperature": 0.7,
                 "max_tokens": 600
             }))
+            print(result)
+            print(self.get_balance())
         return result
     
-'''
-giga = GigaChatManager("MDE5OWM5OGUtMDI3MC03ZGM4LWIyMjItODMyMjE3YjllZjFlOjEzMmUzZTg5LTU2ZTgtNDA2NS1hZmFhLTcwM2FmZTRjMzA2Ng==")
+    def get_balance(self):
+        balance_data = self.giga.get_balance().balance
+        result = "Модель\t\t- \tБаланс\n"
+        result += "-"*35+"\n"
+        for item in balance_data:
+            result += f"{item.usage} \t- \t{item.value}\n"
+        return result
 
+
+"""giga = GigaChatManager("MDE5OWM5OGUtMDI3MC03ZGM4LWIyMjItODMyMjE3YjllZjFlOjEzMmUzZTg5LTU2ZTgtNDA2NS1hZmFhLTcwM2FmZTRjMzA2Ng==")
+
+print(giga.get_balance())
 print(giga.get_files_filenames())
 giga.delete_all_files()
 giga.upload_file("44FZ.pdf")
 giga.upload_file("223FZ.pdf")
 print(giga.get_files_filenames())
-'''
+"""

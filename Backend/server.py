@@ -106,17 +106,15 @@ class FileProcessor:
 @app.post("/api/chat")
 async def chat_with_message(
     message: str = Form(..., description="Текст сообщения пользователя"),
-    file: Optional[UploadFile] = File(None, description="Опциональный файл (PDF, DOCX, DOC, TXT)"),
-    file_id: Optional[str] = Form(None, description="ID файла в GigaChat")
+    file: Optional[UploadFile] = File(None, description="Опциональный файл (PDF, DOCX, DOC, TXT)")
 ):
     """
     Основной endpoint для чата с нейросетью
-    Возвращает только текст ответа нейросети
     """
     try:
         final_message = message
         
-        # Если передан файл, обрабатываем его
+        # Если передан файл, обрабатываем его и добавляем текст к сообщению
         if file:
             # Проверяем тип файла
             file_extension = file.filename.lower().split('.')[-1] if file.filename else ''
@@ -128,51 +126,31 @@ async def chat_with_message(
                     detail=f"Неподдерживаемый формат файла. Поддерживаются: {', '.join(allowed_extensions).upper()}"
                 )
             
+            # Извлекаем текст из файла
             file_text = await FileProcessor.process_uploaded_file(file)
+            
+            # Формируем финальное сообщение: текст пользователя + текст из файла
             if file_text:
-                if final_message:
+                if final_message.strip():
+                    # Если есть и текст и файл - объединяем
                     final_message = f"{final_message}\n\nКонтекст из файла '{file.filename}':\n{file_text}"
                 else:
-                    final_message = file_text
+                    # Если только файл - используем текст файла как сообщение
+                    final_message = f"Проанализируйте следующий документ:\n{file_text}"
         
         if not final_message.strip():
             raise HTTPException(status_code=400, detail="Сообщение не может быть пустым")
         
-        # Если указан file_id, используем метод с прикрепленным материалом
-        if file_id:
-            try:
-                with open("PROMPT_WHO_ARE_YOU.txt", "r", encoding="utf-8") as prompt_file:
-                    prompt_template = prompt_file.read()
-            except FileNotFoundError:
-                prompt_template = "Проанализируйте следующий вопрос: {message}"
-            
-            prompt = prompt_template.format(message=final_message)
-            
-            response = file_manager.giga.chat({
-                "messages": [
-                    {
-                        "role": "assistant",
-                        "content": prompt,
-                        "attachments": [file_id],
-                    }
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000
-            })
-            
-            result_content = response.choices[0].message.content
-            
-        else:
-            # Обычный чат без прикрепленного файла
-            responses = file_manager.ask_according_to_material(final_message)
-            
-            # Берем первый ответ (можно изменить логику если нужно объединять ответы)
-            if responses and hasattr(responses[0], 'choices') and responses[0].choices:
-                result_content = responses[0].choices[0].message.content
-            else:
-                result_content = "Не удалось получить ответ от нейросети"
+        # Отправляем запрос в GigaChat (простой чат без прикрепленных файлов)
+        responses = file_manager.ask_according_to_material(final_message)
         
-        # Возвращаем ТОЛЬКО текст ответа нейросети
+        # Обрабатываем ответ
+        if responses and hasattr(responses[0], 'choices') and responses[0].choices:
+            result_content = responses[0].choices[0].message.content
+        else:
+            result_content = "Не удалось получить ответ от нейросети"
+        
+        # Всегда возвращаем одинаковый формат
         return JSONResponse({
             "response": result_content
         })

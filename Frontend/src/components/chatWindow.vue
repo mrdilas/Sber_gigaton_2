@@ -285,53 +285,30 @@ export default {
 
             try {
                 const formData = new FormData();
-                
-                // Всегда добавляем сообщение
-                formData.append('message', userMessageText);
 
-                // СЦЕНАРИЙ 1: Если есть прикрепленный файл - отправляем его
+                formData.append('message', userMessageText);
+                
+                // Если есть прикрепленный файл, добавляем его
                 if (this.attachedFile) {
                     formData.append('file', this.attachedFile);
-                    
-                    console.log('Отправляем запрос с ВРЕМЕННЫМ файлом:', {
+                    console.log('Отправляем запрос с файлом:', {
                         message: userMessageText,
                         fileName: this.attachedFile.name
                     });
-
-                } 
-                // СЦЕНАРИЙ 2: Если выбран файл из базы - отправляем только file_id
-                else if (this.selectedFileId) {
-                    formData.append('file_id', this.selectedFileId);
-                    
-                    console.log('Отправляем запрос с файлом из БАЗЫ:', {
-                        message: userMessageText,
-                        file_id: this.selectedFileId
-                    });
-                }
-                // СЦЕНАРИЙ 3: Только текст (без файлов)
-                else {
-                    console.log('Отправляем ТЕКСТОВЫЙ запрос:', {
+                } else {
+                    console.log('Отправляем текстовый запрос:', {
                         message: userMessageText
                     });
-                }
 
-                // ДЕБАГ: Проверим что отправляем
-                console.log('FormData содержимое:');
-                for (let [key, value] of formData.entries()) {
-                    console.log(key, value);
                 }
 
                 const response = await fetch(this.apiUrl, {
                     method: 'POST',
-                    // НЕ добавляем Content-Type header для FormData - браузер сам установит
                     body: formData
                 });
 
                 if (!response.ok) {
-                    // Получим больше информации об ошибке
-                    const errorText = await response.text();
-                    console.error('Детали ошибки:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -352,16 +329,12 @@ export default {
                     this.addSystemMessage('Не удалось получить ответ от нейросети');
                 }
 
-                // Убираем прикрепленный файл после отправки (только для временных файлов)
-                if (this.attachedFile) {
-                    this.attachedFile = null;
-                }
+                // Убираем прикрепленный файл после отправки
+                this.attachedFile = null;
                 
             } catch (error) {
                 console.error('Ошибка при отправке сообщения:', error);
-                
                 this.addSystemMessage(`Произошла ошибка: ${error.message}`);
-                this.showErrorNotification(`Ошибка: ${error.message}`);
             } finally {
                 this.isLoading = false;
                 
