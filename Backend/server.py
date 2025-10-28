@@ -24,7 +24,7 @@ app.add_middleware(
 )
 
 # Инициализация менеджера
-API_TOKEN = "MDE5OWM5OGUtMDI3MC03ZGM4LWIyMjItODMyMjE3YjllZjFlOjEzMmUzZTg5LTU2ZTgtNDA2NS1hZmFhLTcwM2FmZTRjMzA2Ng=="
+API_TOKEN = "MDE5YTJiYzktODNhZS03YWY1LWEzZTUtODMwNjQ0MjJkNjVmOmMxOTIzYjRlLWNkZWMtNDI4My04NzEzLTMxN2E5NzA0MzM5MA=="
 file_manager = GigaChatManager(
     credentials=API_TOKEN,
     scope="GIGACHAT_API_PERS",
