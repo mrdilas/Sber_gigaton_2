@@ -92,7 +92,7 @@ export default {
       console.log('Передаем ID файла:', pdfId);
     },
 
-    async handleFileUpload(event) {
+    /*async handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file || this.isLoading) return;
 
@@ -188,7 +188,7 @@ export default {
         console.error('Ошибка удаления файла:', error);
         alert('Ошибка при удалении файла: ' + error.message);
       }
-    }
+    }*/
   }
 }
 </script>

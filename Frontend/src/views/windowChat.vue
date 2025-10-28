@@ -74,7 +74,7 @@ export default {
   overflow-y: auto;
   width: 40vh;
   height: 100%;
-  padding: 50px;
+  padding: 70px;
   box-sizing: border-box;
 }
 
@@ -91,7 +91,8 @@ export default {
   overflow-y: auto;
   width: 40vh;
   height: 100%;
-  padding: 50px;
+  padding: 50px 0px 0px 0px;
   box-sizing: border-box;
 }
+
 </style>

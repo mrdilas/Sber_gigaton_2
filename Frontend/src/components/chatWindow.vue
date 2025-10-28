@@ -12,11 +12,28 @@
                 :key="index" 
                 :class="['message', message.type]"
             >
+                <!-- Текстовое содержимое сообщения -->
                 <div 
+                    v-if="message.text"
                     class="message-content" 
                     v-html="message.text"
                 >
                 </div>
+                
+                <!-- Информация о файле (если есть) -->
+                <div 
+                    v-if="message.fileInfo" 
+                    class="file-message-content"
+                >
+                    <div class="file-preview-content">
+                        <img :src="getFileIcon(message.fileInfo.name)" alt="File" class="file-preview-icon" />
+                        <div class="file-info">
+                            <span class="file-name">{{ message.fileInfo.name }}</span>
+                            <span class="file-size">{{ formatFileSize(message.fileInfo.size) }}</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="message-time">
                     {{ formatTime(message.timestamp) }}
                 </div>
@@ -243,11 +260,21 @@ export default {
             const userMessageText = this.newMessage.trim();
             this.newMessage = '';
             
+            // Создаем сообщение пользователя с возможной информацией о файле
             const userMessage = {
                 text: userMessageText,
                 type: 'user',
                 timestamp: new Date()
             };
+            
+            // Если есть прикрепленный файл, добавляем информацию о нем в сообщение
+            if (this.attachedFile) {
+                userMessage.fileInfo = {
+                    name: this.attachedFile.name,
+                    size: this.attachedFile.size,
+                    type: this.attachedFile.type
+                };
+            }
             
             this.messages.push(userMessage);
             this.isLoading = true;
@@ -257,88 +284,77 @@ export default {
             });
 
             try {
-                let requestData = {
-                    message: userMessageText
-                };
+                const formData = new FormData();
+                
+                // Всегда добавляем сообщение
+                formData.append('message', userMessageText);
 
-                // Если есть прикрепленный файл, отправляем его вместе с сообщением
+                // СЦЕНАРИЙ 1: Если есть прикрепленный файл - отправляем его
                 if (this.attachedFile) {
-                    const formData = new FormData();
-                    formData.append('message', userMessageText);
                     formData.append('file', this.attachedFile);
-
-                    console.log('Отправляем запрос с файлом на сервер:', {
+                    
+                    console.log('Отправляем запрос с ВРЕМЕННЫМ файлом:', {
                         message: userMessageText,
-                        fileName: this.attachedFile.name,
-                        fileSize: this.attachedFile.size,
-                        fileType: this.getFileTypeDescription(this.attachedFile.name)
+                        fileName: this.attachedFile.name
                     });
 
-                    const response = await fetch(this.apiUrl, {
-                        method: 'POST',
-                        body: formData
+                } 
+                // СЦЕНАРИЙ 2: Если выбран файл из базы - отправляем только file_id
+                else if (this.selectedFileId) {
+                    formData.append('file_id', this.selectedFileId);
+                    
+                    console.log('Отправляем запрос с файлом из БАЗЫ:', {
+                        message: userMessageText,
+                        file_id: this.selectedFileId
                     });
+                }
+                // СЦЕНАРИЙ 3: Только текст (без файлов)
+                else {
+                    console.log('Отправляем ТЕКСТОВЫЙ запрос:', {
+                        message: userMessageText
+                    });
+                }
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                // ДЕБАГ: Проверим что отправляем
+                console.log('FormData содержимое:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key, value);
+                }
 
-                    const data = await response.json();
+                const response = await fetch(this.apiUrl, {
+                    method: 'POST',
+                    // НЕ добавляем Content-Type header для FormData - браузер сам установит
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    // Получим больше информации об ошибке
+                    const errorText = await response.text();
+                    console.error('Детали ошибки:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('Получен ответ от сервера:', data);
+
+                if (data.response) {
+                    const formattedResponse = this.formatResponse(data.response);
                     
-                    console.log('Получен ответ от сервера:', data);
-
-                    if (data.response) {
-                        const formattedResponse = this.formatResponse(data.response);
-                        
-                        const botMessage = {
-                            text: formattedResponse,
-                            type: 'bot',
-                            timestamp: new Date()
-                        };
-                        
-                        this.messages.push(botMessage);
-                    } else {
-                        this.addSystemMessage('Не удалось получить ответ от нейросети');
-                    }
-
-                    // Убираем прикрепленный файл после отправки
-                    this.attachedFile = null;
+                    const botMessage = {
+                        text: formattedResponse,
+                        type: 'bot',
+                        timestamp: new Date()
+                    };
                     
+                    this.messages.push(botMessage);
                 } else {
-                    // Отправка только текста (существующая логика)
-                    requestData.file_id = this.selectedFileId;
+                    this.addSystemMessage('Не удалось получить ответ от нейросети');
+                }
 
-                    console.log('Отправляем текстовый запрос на сервер:', requestData);
-
-                    const response = await fetch(this.apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(requestData)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    
-                    console.log('Получен ответ от сервера:', data);
-
-                    if (data.response) {
-                        const formattedResponse = this.formatResponse(data.response);
-                        
-                        const botMessage = {
-                            text: formattedResponse,
-                            type: 'bot',
-                            timestamp: new Date()
-                        };
-                        
-                        this.messages.push(botMessage);
-                    } else {
-                        this.addSystemMessage('Не удалось получить ответ от нейросети');
-                    }
+                // Убираем прикрепленный файл после отправки (только для временных файлов)
+                if (this.attachedFile) {
+                    this.attachedFile = null;
                 }
                 
             } catch (error) {
@@ -546,7 +562,7 @@ export default {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const response = await fetch('http://localhost:5000/api/pdf/upload', {
+                const response = await fetch('http://localhost:5000/api/file/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -576,7 +592,7 @@ export default {
 
         async loadPdfFiles() {
             try {
-                const response = await fetch('http://localhost:5000/api/pdf/files');
+                const response = await fetch('http://localhost:5000/api/files');
                 const data = await response.json();
                 
                 if (!response.ok) throw new Error(data.error);
@@ -705,6 +721,20 @@ export default {
     transform: scale(1.1);
 }
 
+/* Стили для файлов в сообщениях чата */
+.file-message-content {
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.message.user .file-message-content {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 /* Остальные стили остаются без изменений */
 .chat-container {
     display: flex;
@@ -719,7 +749,7 @@ export default {
     font-family: 'Inter', 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
     backdrop-filter: blur(10px);
 }
-
+.element { -ms-overflow-style: none; }
 .chat-header {
     background: linear-gradient(0deg, rgb(126, 157, 199), rgb(75, 35, 159));
     color: white;
@@ -727,6 +757,11 @@ export default {
     text-align: center;
     backdrop-filter: blur(10px);
     border-radius: 0px 0px 20px 20px;
+    -webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .chat-header h2 {
@@ -828,6 +863,11 @@ export default {
     color: rgba(15, 15, 15, 0.8);
     margin-top: 8px;
     font-weight: 500;
+    -webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .message.bot .message-time,
@@ -888,6 +928,11 @@ export default {
     font-family: inherit;
     letter-spacing: -0.2px;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    -webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .send-button:hover:not(:disabled) {
@@ -915,6 +960,11 @@ export default {
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    -webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .voice-button:hover:not(:disabled) {
@@ -982,6 +1032,11 @@ export default {
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    -webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .paperClip-icon {

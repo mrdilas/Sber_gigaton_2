@@ -46,10 +46,13 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  
 }
+.element { -ms-overflow-style: none; }
+
 
 .block-info {
-  width: 350px;
+  width: 300px;
   padding: 20px;
   overflow-y: auto;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
